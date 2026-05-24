@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Neon Arena ✦ Tic Tac Toe | Live Emoji Reactions</title>
+  <!-- Canvas Confetti Library -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    /* ---- DARK NEON GAMING THEME + ANIMATED BACKGROUND ---- */
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at 20% 30%, #0a0f1e, #03050b);
+      font-family: 'Poppins', 'Segoe UI', 'Orbitron', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+      color: #f0f3ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Floating particles animated background */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      background: rgba(0, 255, 255, 0.4);
+      border-radius: 50%;
+      box-shadow: 0 0 12px cyan;
+      animation: floatParticle 12s infinite linear;
+      width: 4px;
+      height: 4px;
+    }
+
+    @keyframes floatParticle {
+      0% { transform: translateY(100vh) translateX(0) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.8; }
+      90% { opacity: 0.8; }
+      100% { transform: translateY(-20vh) translateX(40px) rotate(360deg); opacity: 0; }
+    }
+
+    /* main glassmorphic container */
+    .game-container {
+      position: relative;
+      z-index: 10;
+      max-width: 680px;
+      width: 100%;
+      background: rgba(10, 20, 30, 0.45);
+      backdrop-filter: blur(12px);
+      border-radius: 3rem;
+      padding: 1.8rem 1.8rem 2.2rem;
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(0, 255, 255, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    /* header style */
+    h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.8rem;
+      background: linear-gradient(135deg, #aaffff, #3eff9e);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: 2px;
+      text-shadow: 0 0 8px cyan;
+      margin-bottom: 0.5rem;
+    }
+
+    /* lobby section */
+    .lobby-panel {
+      background: rgba(0, 0, 0, 0.55);
+      border-radius: 2rem;
+      padding: 1.2rem;
+      margin-bottom: 1.8rem;
+      border: 1px solid rgba(0, 255, 255, 0.6);
+      box-shadow: inset 0 0 10px rgba(0,255,255,0.1), 0 8px 18px rgba(0,0,0,0.4);
+    }
+
+    .flex-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.8rem;
+      margin: 0.8rem 0;
+      align-items: center;
+    }
+
+    .neon-btn {
+      background: linear-gradient(95deg, #00c9ff, #00f2a0);
+      border: none;
+      padding: 0.7rem 1.6rem;
+      border-radius: 3rem;
+      font-weight: bold;
+      font-size: 1rem;
+      color: #0a0f1e;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 0 6px cyan;
+      font-family: monospace;
+      font-weight: 600;
+    }
+
+    .neon-btn:hover {
+      transform: scale(1.02);
+      box-shadow: 0 0 14px cyan, 0 4px 12px rgba(0,255,255,0.4);
+    }
+
+    .neon-input {
+      background: rgba(0, 0, 0, 0.7);
+      border: 1.5px solid #0ff;
+      border-radius: 3rem;
+      padding: 0.7rem 1.2rem;
+      color: #0ff;
+      font-weight: bold;
+      text-align: center;
+      font-size: 1rem;
+      outline: none;
+      width: 170px;
+      backdrop-filter: blur(4px);
+    }
+
+    .room-code-box {
+      background: #000000aa;
+      padding: 0.4rem 0.8rem;
+      border-radius: 2rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-family: monospace;
+      font-weight: bold;
+      font-size: 1.1rem;
+      border: 1px solid cyan;
+    }
+
+    /* scoreboard glass */
+    .scoreboard {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.8rem;
+      background: rgba(0, 0, 0, 0.65);
+      border-radius: 2rem;
+      padding: 0.7rem 1rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      backdrop-filter: blur(5px);
+    }
+
+    .score-card {
+      flex: 1;
+      background: rgba(0, 30, 40, 0.7);
+      border-radius: 1.5rem;
+      padding: 0.5rem;
+      border-left: 2px solid cyan;
+    }
+
+    .score-value {
+      font-size: 1.6rem;
+      font-weight: 800;
+      font-family: monospace;
+      color: #0ff;
+    }
+
+    /* premium board */
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      max-width: 340px;
+      margin: 1rem auto;
+    }
+
+    .cell {
+      aspect-ratio: 1 / 1;
+      background: rgba(20, 30, 45, 0.8);
+      backdrop-filter: blur(6px);
+      border-radius: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.2rem;
+      font-weight: 800;
+      font-family: 'Orbitron', monospace;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+      color: #eef5ff;
+      text-shadow: 0 0 6px currentColor;
+    }
+
+    .cell:hover {
+      transform: scale(0.97);
+      border-color: cyan;
+      box-shadow: 0 0 18px rgba(0, 255, 255, 0.5);
+      background: rgba(0, 200, 255, 0.2);
+    }
+
+    /* winning line glow */
+    .win-highlight {
+      background: rgba(0, 255, 180, 0.45);
+      box-shadow: 0 0 20px #3eff9e, inset 0 0 8px #b3ffcf;
+      border: 1px solid #aaffaa;
+    }
+
+    /* click animation */
+    .cell-clicked {
+      animation: cellPop 0.18s cubic-bezier(0.2, 1.3, 0.8, 1);
+    }
+
+    @keyframes cellPop {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* loser shake effect */
+    .shake-lose {
+      animation: shakeEffect 0.4s ease-in-out 0s 2;
+    }
+
+    @keyframes shakeEffect {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+      100% { transform: translateX(0); }
+    }
+
+    .dark-red-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(120, 0, 0, 0.3);
+      pointer-events: none;
+      z-index: 99;
+      animation: fadeOut 1s forwards;
+    }
+
+    @keyframes fadeOut {
+      0% { opacity: 0.6; }
+      100% { opacity: 0; visibility: hidden; }
+    }
+
+    /* status message + popup */
+    .status-message {
+      margin: 15px auto 10px;
+      font-weight: bold;
+      font-size: 1.25rem;
+      background: rgba(0,0,0,0.7);
+      display: inline-block;
+      padding: 0.4rem 1.2rem;
+      border-radius: 2rem;
+      backdrop-filter: blur(5px);
+    }
+
+    /* rematch button */
+    .rematch-btn {
+      background: linear-gradient(120deg, #f0a500, #ff6a00);
+      box-shadow: 0 0 12px orange;
+      margin-top: 10px;
+      padding: 0.6rem 1.5rem;
+    }
+
+    /* symbol badge */
+    .symbol-badge {
+      background: #0a1a2a;
+      border-radius: 2rem;
+      padding: 0.2rem 1rem;
+      font-size: 0.9rem;
+      width: fit-content;
+      margin: 0 auto 8px auto;
+    }
+
+    /* ===== EMOJI REACTION BAR ===== */
+    .reaction-bar {
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(10px);
+      border-radius: 3rem;
+      padding: 0.6rem 1rem;
+      margin: 1rem 0 0.5rem;
+      display: flex;
+      justify-content: center;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      border: 1px solid rgba(0, 255, 255, 0.5);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+    }
+
+    .emoji-btn {
+      background: rgba(20, 30, 55, 0.9);
+      border: none;
+      font-size: 1.8rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 2rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      backdrop-filter: blur(4px);
+    }
+
+    .emoji-btn:hover {
+      transform: scale(1.2) translateY(-5px);
+      filter: drop-shadow(0 0 8px cyan);
+      background: rgba(0, 255, 255, 0.3);
+    }
+
+    /* Floating Emoji Animation Container */
+    .floating-emoji {
+      position: fixed;
+      font-size: 3rem;
+      pointer-events: none;
+      z-index: 1000;
+      animation: floatUpBounce 2s ease-out forwards;
+      filter: drop-shadow(0 0 12px cyan);
+    }
+
+    @keyframes floatUpBounce {
+      0% {
+        opacity: 1;
+        transform: translateY(0) scale(0.6);
+      }
+      30% {
+        transform: translateY(-40px) scale(1.2);
+      }
+      70% {
+        opacity: 0.9;
+        transform: translateY(-100px) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-180px) scale(0.8);
+        visibility: hidden;
+      }
+    }
+
+    /* reaction message (who reacted) */
+    .reaction-notification {
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(12px);
+      border-radius: 2rem;
+      padding: 0.3rem 1rem;
+      font-size: 0.8rem;
+      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+      border-left: 3px solid cyan;
+      animation: slideInNotify 0.3s ease;
+    }
+
+    @keyframes slideInNotify {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* responsive */
+    @media (max-width: 550px) {
+      .game-container {
+        padding: 1rem;
+      }
+      .cell {
+        font-size: 2rem;
+      }
+      .board {
+        gap: 0.7rem;
+      }
+      .emoji-btn {
+        font-size: 1.4rem;
+        padding: 0.3rem 0.6rem;
+      }
+      .reaction-bar {
+        gap: 0.5rem;
+      }
+    }
+
+    footer {
+      font-size: 0.7rem;
+      margin-top: 1rem;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+<div class="particles" id="particlesContainer"></div>
+
+<div class="game-container" id="gameContainer">
+  <h1>✦ tech force ✦<br><span style="font-size: 0.9rem;">TIC TAC TOE | LIVE EMOJI</span></h1>
+
+  <!-- LOBBY SECTION -->
+  <div class="lobby-panel" id="lobbyPanel">
+    <div class="flex-row">
+      <button class="neon-btn" id="createRoomBtn">➕ CREATE ROOM</button>
+      <div class="flex-row" style="gap: 0.3rem;">
+        <input type="text" id="joinRoomInput" class="neon-input" placeholder="Room Code" maxlength="8">
+        <button class="neon-btn" id="joinRoomBtn">🔗 JOIN</button>
+      </div>
+    </div>
+    <div id="roomInfoArea" style="display: flex; justify-content: center; gap: 12px; align-items: center; margin-top: 12px; flex-wrap: wrap;">
+      <div id="roomCodeDisplay" class="room-code-box" style="display: none;">
+        <span>🏆 CODE: </span><strong id="roomCodeValue">-----</strong>
+        <button id="copyCodeBtn" class="neon-btn" style="padding: 4px 12px; font-size: 0.8rem;">📋 COPY</button>
+      </div>
+      <div id="symbolDisplay" class="symbol-badge" style="display: none;">YOU ARE: <span id="mySymbolSpan">—</span></div>
+    </div>
+  </div>
+
+  <!-- SCOREBOARD -->
+  <div class="scoreboard">
+    <div class="score-card">❌ X WINS<br><span id="scoreX" class="score-value">0</span></div>
+    <div class="score-card">⭕ O WINS<br><span id="scoreO" class="score-value">0</span></div>
+    <div class="score-card">⚖️ DRAWS<br><span id="scoreDraw" class="score-value">0</span></div>
+  </div>
+
+  <!-- BOARD -->
+  <div class="board" id="board"></div>
+
+  <!-- EMOJI REACTION BAR (Modern Gaming Style) -->
+  <div class="reaction-bar" id="reactionBar">
+    <button class="emoji-btn" data-emoji="😀">😀</button>
+    <button class="emoji-btn" data-emoji="😡">😡</button>
+    <button class="emoji-btn" data-emoji="😂">😂</button>
+    <button class="emoji-btn" data-emoji="😭">😭</button>
+    <button class="emoji-btn" data-emoji="🔥">🔥</button>
+    <button class="emoji-btn" data-emoji="💀">💀</button>
+    <button class="emoji-btn" data-emoji="😎">😎</button>
+    <button class="emoji-btn" data-emoji="❤️">❤️</button>
+  </div>
+
+  <!-- STATUS + REMATCH -->
+  <div id="statusArea" class="status-message">⚡ CREATE OR JOIN A ROOM</div>
+  <button id="rematchBtn" class="neon-btn rematch-btn" style="display: none;">🔄 REMATCH / RESTART</button>
+  <footer>Made by adhyyan maurya </footer>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, set, update, onValue, get, push, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  // ========== 🔥 FIREBASE CONFIGURATION (REPLACE WITH YOUR CONFIG) ==========
+  const firebaseConfig = {
+    // >>>>>>>>>>>>>>>>  PASTE YOUR FIREBASE CONFIG HERE  <<<<<<<<<<<<<<<<<
+    apiKey: "YOUR_API_KEY",
+    authDomain: "your-project.firebaseapp.com",
+    databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+    projectId: "your-project-id",
+    storageBucket: "your-project.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abcdef"
+  };
+  // =========================================================================
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // DOM elements
+  const boardContainer = document.getElementById("board");
+  const statusDiv = document.getElementById("statusArea");
+  const rematchBtn = document.getElementById("rematchBtn");
+  const createBtn = document.getElementById("createRoomBtn");
+  const joinBtn = document.getElementById("joinRoomBtn");
+  const joinInput = document.getElementById("joinRoomInput");
+  const roomCodeDisplayDiv = document.getElementById("roomCodeDisplay");
+  const roomCodeValueSpan = document.getElementById("roomCodeValue");
+  const copyCodeBtn = document.getElementById("copyCodeBtn");
+  const symbolDisplayDiv = document.getElementById("symbolDisplay");
+  const mySymbolSpan = document.getElementById("mySymbolSpan");
+  const scoreXSpan = document.getElementById("scoreX");
+  const scoreOSpan = document.getElementById("scoreO");
+  const scoreDrawSpan = document.getElementById("scoreDraw");
+
+  // Game state variables
+  let roomId = "";
+  let mySymbol = "";      // "X" or "O"
+  let board = ["","","","","","","","",""];
+  let turn = "X";
+  let gameOver = false;
+  let winner = "";
+  let drawFlag = false;
+  let currentWinCombo = null;
+  
+  // Score tracking
+  let stats = { Xwins: 0, Owins: 0, draws: 0 };
+
+  // Build board UI
+  let cells = [];
+  for (let i = 0; i < 9; i++) {
+    const cellDiv = document.createElement("div");
+    cellDiv.classList.add("cell");
+    cellDiv.dataset.index = i;
+    cellDiv.addEventListener("click", () => handleMove(i));
+    boardContainer.appendChild(cellDiv);
+    cells.push(cellDiv);
+  }
+
+  // ========== EMOJI REACTION SYSTEM ==========
+  async function sendReaction(emoji) {
+    if (!roomId) {
+      statusDiv.innerHTML = "⚠️ Join a room first to react!";
+      return;
+    }
+    const reactionRef = ref(db, `rooms/${roomId}/reactions`);
+    const newReaction = {
+      emoji: emoji,
+      playerSymbol: mySymbol,
+      playerLabel: mySymbol === "X" ? "X Player" : "O Player",
+      timestamp: Date.now()
+    };
+    await push(reactionRef, newReaction);
+    showFloatingEmoji(emoji);
+    showReactionMessage(`You (${mySymbol}) reacted: ${emoji}`, true);
+  }
+
+  function showFloatingEmoji(emoji) {
+    const floating = document.createElement("div");
+    floating.className = "floating-emoji";
+    floating.innerText = emoji;
+    const randomX = Math.random() * 60 + 20;
+    floating.style.left = randomX + "%";
+    floating.style.bottom = "20%";
+    floating.style.position = "fixed";
+    document.body.appendChild(floating);
+    setTimeout(() => {
+      if (floating && floating.remove) floating.remove();
+    }, 2000);
+  }
+
+  let activeReactionMsg = null;
+  function showReactionMessage(text, isSelf = false) {
+    const container = document.getElementById("reactionBar");
+    if (!container) return;
+    if (activeReactionMsg) activeReactionMsg.remove();
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "reaction-notification";
+    msgDiv.innerHTML = isSelf ? `💬 ${text}` : `✨ ${text}`;
+    msgDiv.style.background = isSelf ? "rgba(0, 255, 200, 0.2)" : "rgba(0, 150, 255, 0.3)";
+    msgDiv.style.borderLeftColor = isSelf ? "#ffd966" : "#0ff";
+    container.appendChild(msgDiv);
+    activeReactionMsg = msgDiv;
+    setTimeout(() => {
+      if (msgDiv && msgDiv.remove) msgDiv.remove();
+      if (activeReactionMsg === msgDiv) activeReactionMsg = null;
+    }, 2800);
+  }
+
+  function setupReactionListener() {
+    if (!roomId) return;
+    const reactionsRef = ref(db, `rooms/${roomId}/reactions`);
+    onValue(reactionsRef, (snapshot) => {
+      const reactions = snapshot.val();
+      if (!reactions) return;
+      
+      // Process each reaction
+      Object.entries(reactions).forEach(([key, reaction]) => {
+        if (reaction && reaction.playerSymbol !== mySymbol) {
+          showFloatingEmoji(reaction.emoji);
+          showReactionMessage(`${reaction.playerLabel} reacted: ${reaction.emoji}`, false);
+        }
+        // Auto delete reaction after 3 seconds
+        setTimeout(async () => {
+          await remove(ref(db, `rooms/${roomId}/reactions/${key}`)).catch(e => console.log);
+        }, 3000);
+      });
+    });
+  }
+
+  function bindEmojiButtons() {
+    const emojiBtns = document.querySelectorAll(".emoji-btn");
+    emojiBtns.forEach(btn => {
+      btn.removeEventListener("click", emojiClickHandler);
+      btn.addEventListener("click", emojiClickHandler);
+    });
+  }
+  
+  function emojiClickHandler(e) {
+    const emoji = e.currentTarget.getAttribute("data-emoji");
+    if (emoji) sendReaction(emoji);
+    const btn = e.currentTarget;
+    btn.style.transform = "scale(1.3)";
+    btn.style.filter = "drop-shadow(0 0 12px cyan)";
+    setTimeout(() => {
+      btn.style.transform = "";
+      btn.style.filter = "";
+    }, 200);
+  }
+
+  // render board UI
+  function renderBoardUI() {
+    for (let i = 0; i < 9; i++) {
+      cells[i].innerText = board[i];
+      cells[i].classList.remove("win-highlight", "cell-clicked");
+    }
+    if (currentWinCombo && winner) {
+      for (let idx of currentWinCombo) {
+        if (cells[idx]) cells[idx].classList.add("win-highlight");
+      }
+    }
+  }
+
+  function animateClick(cellIndex) {
+    if (cells[cellIndex]) {
+      cells[cellIndex].classList.add("cell-clicked");
+      setTimeout(() => cells[cellIndex]?.classList.remove("cell-clicked"), 200);
+    }
+  }
+
+  function burstConfetti() {
+    canvasConfetti({ particleCount: 130, spread: 70, origin: { y: 0.6 }, colors: ['#0ff', '#3eff9e', '#ffcc44'] });
+    setTimeout(() => canvasConfetti({ particleCount: 40, spread: 100, origin: { y: 0.5, x: 0.2 }, startVelocity: 15 }), 150);
+  }
+
+  function showGameConclusion(winnerSymbol, isDraw) {
+    if (isDraw) {
+      statusDiv.innerHTML = "🤝 MATCH DRAW! 🤝";
+      const pop = document.createElement("div");
+      pop.innerText = "⚖️ DRAW ⚖️";
+      pop.style.position = "fixed"; pop.style.bottom = "30%"; pop.style.left = "50%"; pop.style.transform = "translateX(-50%)";
+      pop.style.background = "#222"; pop.style.color = "#ffcc88"; pop.style.padding = "10px 24px"; pop.style.borderRadius = "40px";
+      pop.style.zIndex = "999"; pop.style.fontWeight = "bold"; pop.style.backdropFilter = "blur(16px)"; pop.style.border = "1px solid gold";
+      document.body.appendChild(pop);
+      setTimeout(() => pop.remove(), 1500);
+      return;
+    }
+    const isMyWin = (mySymbol === winnerSymbol);
+    if (isMyWin) {
+      statusDiv.innerHTML = "🏆 YOU WON! 🏆";
+      burstConfetti();
+      const crownMsg = document.createElement("div");
+      crownMsg.innerHTML = "👑 VICTORY ROYALE 👑";
+      crownMsg.style.position = "fixed"; crownMsg.style.top = "20%"; crownMsg.style.left = "50%"; crownMsg.style.transform = "translateX(-50%)";
+      crownMsg.style.background = "radial-gradient(circle, gold, orange)"; crownMsg.style.padding = "12px 28px"; crownMsg.style.borderRadius = "50px";
+      crownMsg.style.color = "#111"; crownMsg.style.fontWeight = "bold"; crownMsg.style.fontSize = "1.5rem"; crownMsg.style.zIndex = "1000";
+      crownMsg.style.boxShadow = "0 0 30px gold";
+      document.body.appendChild(crownMsg);
+      setTimeout(() => crownMsg.remove(), 2000);
+    } else {
+      statusDiv.innerHTML = "💔 YOU LOST! Better luck next time 💔";
+      document.getElementById("gameContainer").classList.add("shake-lose");
+      setTimeout(() => document.getElementById("gameContainer")?.classList.remove("shake-lose"), 600);
+      const overlay = document.createElement("div");
+      overlay.className = "dark-red-overlay";
+      document.body.appendChild(overlay);
+      setTimeout(() => overlay.remove(), 1000);
+      const msgLose = document.createElement("div");
+      msgLose.innerText = "😞 Better luck next time";
+      msgLose.style.position = "fixed"; msgLose.style.bottom = "20%"; msgLose.style.left = "50%"; msgLose.style.transform = "translateX(-50%)";
+      msgLose.style.background = "#8b0000cc"; msgLose.style.padding = "8px 20px"; msgLose.style.borderRadius = "30px"; msgLose.style.color = "#ffbaba";
+      msgLose.style.fontWeight = "bold"; msgLose.style.zIndex = "1000";
+      document.body.appendChild(msgLose);
+      setTimeout(() => msgLose.remove(), 1800);
+    }
+  }
+
+  function computeWinner(boardArray) {
+    const winPatterns = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
+    for (let pattern of winPatterns) {
+      const [a,b,c] = pattern;
+      if (boardArray[a] && boardArray[a] === boardArray[b] && boardArray[a] === boardArray[c]) {
+        return { winner: boardArray[a], combo: pattern };
+      }
+    }
+    if (boardArray.every(cell => cell !== "")) return { winner: "draw", combo: null };
+    return { winner: null, combo: null };
+  }
+
+  function updateScoreUI() {
+    scoreXSpan.innerText = stats.Xwins;
+    scoreOSpan.innerText = stats.Owins;
+    scoreDrawSpan.innerText = stats.draws;
+  }
+
+  async function requestRematch() {
+    if (!roomId) return;
+    const newBoard = ["","","","","","","","",""];
+    await update(ref(db, `rooms/${roomId}`), {
+      board: newBoard,
+      turn: "X",  // Reset turn to X for new game
+      winner: "",
+      draw: false,
+      winCombo: null,
+      gameActive: true
+    });
+    // Reset local game state
+    gameOver = false;
+    winner = "";
+    drawFlag = false;
+    currentWinCombo = null;
+    window._lastWinnerState = null;
+    window._lastDrawState = null;
+  }
+
+  // FIXED: handleMove with proper turn management
+  async function handleMove(index) {
+    if (!roomId) { 
+      statusDiv.innerHTML = "⚠️ Create or join a room first!"; 
+      return; 
+    }
+    
+    // Get fresh data from Firebase to ensure turn is correct
+    const roomRef = ref(db, `rooms/${roomId}`);
+    const snapshot = await get(roomRef);
+    const currentData = snapshot.val();
+    
+    if (!currentData) return;
+    
+    const currentBoard = currentData.board || ["","","","","","","","",""];
+    const currentTurn = currentData.turn || "X";
+    const currentGameOver = currentData.winner || currentData.draw;
+    
+    // Validate move conditions
+    if (currentGameOver) {
+      statusDiv.innerHTML = "⚠️ Game is already over! Press Rematch to play again.";
+      return;
+    }
+    
+    if (currentBoard[index] !== "") {
+      statusDiv.innerHTML = "❌ Cell already taken!";
+      return;
+    }
+    
+    if (currentTurn !== mySymbol) {
+      statusDiv.innerHTML = `⏳ Wait for your turn! It's ${currentTurn}'s turn`;
+      return;
+    }
+    
+    // Make the move
+    let newBoard = [...currentBoard];
+    newBoard[index] = mySymbol;
+    const { winner: win, combo } = computeWinner(newBoard);
+    const isDraw = (!win && newBoard.every(cell => cell !== ""));
+    
+    // Calculate next turn
+    let nextTurn = "";
+    if (win || isDraw) {
+      nextTurn = currentTurn; // Game ends, no next turn needed
+    } else {
+      nextTurn = (mySymbol === "X") ? "O" : "X";
+    }
+    
+    const updateData = {
+      board: newBoard,
+      turn: nextTurn,
+      winCombo: combo ? combo : null
+    };
+    
+    if (win) {
+      updateData.winner = win;
+      updateData.draw = false;
+    } else if (isDraw) {
+      updateData.winner = "";
+      updateData.draw = true;
+    } else {
+      updateData.winner = "";
+      updateData.draw = false;
+    }
+    
+    await update(ref(db, `rooms/${roomId}`), updateData);
+    animateClick(index);
+  }
+
+  async function updateStatsAfterGame(winnerSym, isDrawFlag, currentStats) {
+    let newStats = { ...currentStats };
+    if (isDrawFlag) {
+      newStats.draws += 1;
+    } else if (winnerSym === "X") {
+      newStats.Xwins += 1;
+    } else if (winnerSym === "O") {
+      newStats.Owins += 1;
+    }
+    await set(ref(db, `rooms/${roomId}/stats`), newStats);
+    return newStats;
+  }
+
+  function listenRoom(room) {
+    const roomRef = ref(db, `rooms/${room}`);
+    onValue(roomRef, async (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+      
+      board = data.board || ["","","","","","","","",""];
+      turn = data.turn || "X";
+      const winnerExists = data.winner && data.winner !== "";
+      const drawExists = data.draw === true;
+      gameOver = (winnerExists || drawExists);
+      winner = data.winner || "";
+      drawFlag = data.draw || false;
+      currentWinCombo = data.winCombo || null;
+      
+      renderBoardUI();
+      
+      if (data.stats) {
+        stats = data.stats;
+      } else {
+        stats = { Xwins: 0, Owins: 0, draws: 0 };
+        await set(ref(db, `rooms/${roomId}/stats`), stats);
+      }
+      updateScoreUI();
+      
+      const prevWin = window._lastWinnerState;
+      const prevDraw = window._lastDrawState;
+      
+      if ((winnerExists || drawExists) && (prevWin !== winner || prevDraw !== drawFlag)) {
+        if (winnerExists) {
+          const newStats = await updateStatsAfterGame(winner, false, stats);
+          stats = newStats;
+          updateScoreUI();
+          showGameConclusion(winner, false);
+        } else if (drawExists) {
+          const newStats = await updateStatsAfterGame("", true, stats);
+          stats = newStats;
+          updateScoreUI();
+          showGameConclusion("", true);
+        }
+        window._lastWinnerState = winner;
+        window._lastDrawState = drawFlag;
+      } else if (!winnerExists && !drawExists && mySymbol) {
+        if (turn === mySymbol) {
+          statusDiv.innerHTML = `🎮 You are ${mySymbol}  |  🔵 YOUR TURN! Click a cell`;
+        } else {
+          statusDiv.innerHTML = `🎮 You are ${mySymbol}  |  ⚫ Waiting for ${turn}'s move...`;
+        }
+      }
+      
+      if (gameOver && mySymbol) {
+        rematchBtn.style.display = "inline-block";
+      } else {
+        rematchBtn.style.display = "none";
+      }
+      
+      if (gameOver && winnerExists && mySymbol) {
+        statusDiv.innerHTML = (mySymbol === winner) ? "🎉 YOU WON! 🎉" : "💀 YOU LOST! 💀";
+      } else if (gameOver && drawExists && mySymbol) {
+        statusDiv.innerHTML = "🤝 MATCH DRAW! 🤝";
+      }
+    });
+    setupReactionListener();
+  }
+
+  async function createRoomLogic() {
+    roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    mySymbol = "X";
+    const initialBoard = ["","","","","","","","",""];
+    const initialStats = { Xwins: 0, Owins: 0, draws: 0 };
+    await set(ref(db, `rooms/${roomId}`), {
+      board: initialBoard,
+      turn: "X",
+      winner: "",
+      draw: false,
+      winCombo: null,
+      stats: initialStats,
+      gameActive: true
+    });
+    stats = initialStats;
+    updateScoreUI();
+    roomCodeValueSpan.innerText = roomId;
+    roomCodeDisplayDiv.style.display = "flex";
+    symbolDisplayDiv.style.display = "flex";
+    mySymbolSpan.innerText = "X (Host)";
+    listenRoom(roomId);
+    statusDiv.innerHTML = `🔥 Room ${roomId} created! Share code. You are X and go first!`;
+    window._lastWinnerState = null;
+    window._lastDrawState = null;
+    gameOver = false;
+    winner = "";
+    drawFlag = false;
+    bindEmojiButtons();
+  }
+
+  async function joinRoomLogic() {
+    const code = joinInput.value.trim().toUpperCase();
+    if (!code) { alert("Enter room code"); return; }
+    const snap = await get(ref(db, `rooms/${code}`));
+    if (!snap.exists()) { alert("Room not found"); return; }
+    roomId = code;
+    mySymbol = "O";
+    const roomData = snap.val();
+    stats = roomData.stats || { Xwins: 0, Owins: 0, draws: 0 };
+    updateScoreUI();
+    roomCodeValueSpan.innerText = roomId;
+    roomCodeDisplayDiv.style.display = "flex";
+    symbolDisplayDiv.style.display = "flex";
+    mySymbolSpan.innerText = "O (Challenger)";
+    listenRoom(roomId);
+    statusDiv.innerHTML = `✅ Joined room ${roomId}. You are O. Waiting for X's move...`;
+    window._lastWinnerState = null;
+    window._lastDrawState = null;
+    gameOver = false;
+    winner = "";
+    drawFlag = false;
+    bindEmojiButtons();
+  }
+
+  copyCodeBtn.addEventListener("click", () => { 
+    if(roomId) { 
+      navigator.clipboard.writeText(roomId); 
+      statusDiv.innerHTML = "📋 Room code copied!"; 
+      setTimeout(()=> { 
+        if(!gameOver && mySymbol) statusDiv.innerHTML = `Playing as ${mySymbol}`;
+      }, 1500); 
+    } 
+  });
+  
+  rematchBtn.addEventListener("click", async () => { 
+    if(roomId) { 
+      await requestRematch(); 
+      statusDiv.innerHTML = "🔄 Rematch started! New game!"; 
+    } 
+  });
+  
+  createBtn.addEventListener("click", createRoomLogic);
+  joinBtn.addEventListener("click", joinRoomLogic);
+  
+  function generateParticles() {
+    const container = document.getElementById("particlesContainer");
+    for (let i=0;i<70;i++) {
+      let p = document.createElement("div"); 
+      p.classList.add("particle");
+      let size = Math.random() * 6 + 2;
+      p.style.width = size + "px"; 
+      p.style.height = size + "px";
+      p.style.left = Math.random() * 100 + "%";
+      p.style.animationDuration = Math.random() * 12 + 8 + "s";
+      p.style.animationDelay = Math.random() * 8 + "s";
+      p.style.opacity = Math.random() * 0.6 + 0.2;
+      p.style.background = `radial-gradient(cyan, #00ffaa)`;
+      container.appendChild(p);
+    }
+  }
+  generateParticles();
+  bindEmojiButtons();
+</script>
+</body>
+</html>
